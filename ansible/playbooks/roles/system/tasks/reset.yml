@@ -1,0 +1,56 @@
+---
+- name: Stop kubelet service
+  ansible.builtin.systemd:
+    name: kubelet
+    state: stopped
+    enabled: false
+
+- name: Unhold kubelet, kubeadm and kubectl
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: deinstall
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+  when: ansible_os_family == "Debian"
+
+- name: Remove version locks for kubeadm, kubelet and kubectl
+  ansible.builtin.command:
+    cmd: "dnf versionlock delete {{ item }}"
+  with_items:
+    - kubectl
+    - kubelet
+    - kubeadm
+  register: versionlock
+  changed_when: versionlock.rc == 0
+  failed_when: versionlock.rc != 0
+  when: ansible_os_family == "RedHat"
+
+- name: Remove kubelet, kubeadm and kubectl (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - kubectl
+      - kubelet
+      - kubeadm
+    state: absent
+    purge: true
+  when: ansible_os_family == "Debian"
+
+- name: Remove kubelet, kubeadm and kubectl (RedHat/CentOS)
+  ansible.builtin.dnf:
+    name:
+      - kubectl
+      - kubelet
+      - kubeadm
+    state: absent
+  when: ansible_os_family == "RedHat"
+
+- name: Remove kubernetes directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/kubernetes
+    - /var/lib/kubelet
+    - /var/lib/etcd

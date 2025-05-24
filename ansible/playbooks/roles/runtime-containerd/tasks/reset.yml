@@ -1,0 +1,34 @@
+---
+- name: Stop containerd service
+  ansible.builtin.systemd:
+    name: containerd
+    state: stopped
+    enabled: false
+
+- name: Remove containerd packages (RedHat)
+  ansible.builtin.dnf:
+    name:
+      - systemd-resolved
+      - containerd.io
+      - container-selinux
+    state: absent
+  when: ansible_os_family == "RedHat"
+
+- name: Remove containerd packages (Debian)
+  ansible.builtin.apt:
+    name:
+      - containerd.io
+    state: absent
+    purge: true
+  when: ansible_os_family == "Debian"
+
+- name: Remove containerd directories and files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/containerd
+    - /var/lib/containerd
+    - /run/containerd
+    - /opt/cni
+    - /etc/cni

@@ -1,0 +1,6 @@
+---
+# containerd packages for redhat distro
+containerd_packages:
+  - containerd.io
+  - docker-ce-cli
+  - container-selinux

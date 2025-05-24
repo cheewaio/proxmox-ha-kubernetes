@@ -1,0 +1,35 @@
+---
+- name: Check if Helm is installed
+  ansible.builtin.command: which helm
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+  register: helm_exists
+  ignore_errors: true
+  changed_when: false
+
+- name: Install Helm dependencies
+  ansible.builtin.package:
+    name:
+      - git
+    state: present
+
+- name: Download Helm install script
+  ansible.builtin.get_url:
+    url: https://{{ github_access_token }}@raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    dest: /tmp/get_helm.sh
+    mode: "0755"
+  when: helm_exists.rc != 0
+
+- name: Install Helm using script
+  ansible.builtin.command:
+    cmd: /tmp/get_helm.sh
+    creates: /usr/local/bin/helm
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+  when: helm_exists.rc != 0
+
+- name: Remove installation script
+  ansible.builtin.file:
+    path: /tmp/get_helm.sh
+    state: absent
+  when: helm_exists.rc != 0

@@ -1,0 +1,18 @@
+---
+- name: Apply kube-vip cloud provider configuration
+  kubernetes.core.k8s:
+    template: cloud-provider.yaml.j2
+    state: present
+  become: false
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  run_once: true
+  notify: Apply kube-vip RBAC manifests
+
+- name: Apply kube-vip cloud provider manifests
+  kubernetes.core.k8s:
+    src: https://{{ github_access_token }}@raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml
+    state: present
+    wait: true
+  become: false
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  run_once: true

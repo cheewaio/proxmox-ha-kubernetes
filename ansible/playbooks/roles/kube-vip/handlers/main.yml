@@ -1,0 +1,23 @@
+---
+- name: Restore kube-vip static pod manifests
+  ansible.builtin.template:
+    src: kube-vip.yaml.j2
+    dest: /etc/kubernetes/manifests/kube-vip.yaml
+    mode: "0600"
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  run_once: true
+  when:
+    - role_action is defined and role_action == "setup"
+    - kube_vip_enabled
+
+- name: Apply kube-vip RBAC manifests
+  kubernetes.core.k8s:
+    src: https://kube-vip.io/manifests/rbac.yaml
+    state: present
+    wait: true
+  become: false
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  run_once: true
+  when:
+    - role_action is defined and role_action == "setup"
+    - kube_vip_enabled

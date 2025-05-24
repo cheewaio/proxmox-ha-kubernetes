@@ -1,0 +1,34 @@
+---
+- name: Add Calico Helm repository
+  kubernetes.core.helm_repository:
+    name: projectcalico
+    repo_url: https://projectcalico.docs.tigera.io/charts
+    state: present
+
+- name: Install Calico helm chart
+  kubernetes.core.helm:
+    name: calico
+    chart_ref: projectcalico/tigera-operator
+    release_namespace: tigera-operator
+    create_namespace: true
+    upgrade: true
+    wait: true
+    values:
+      installation:
+        cni:
+          type: Calico
+        calicoNetwork:
+          ipPools:
+            - cidr: "{{ pod_network_cidr }}"
+              encapsulation: VXLANCrossSubnet
+              natOutgoing: true
+
+- name: Wait for Calico pods to be ready
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: calico-system
+    wait: true
+    wait_timeout: 300
+    wait_condition:
+      type: Ready
+      status: "True"

@@ -1,0 +1,6 @@
+{
+  "ansible.python.interpreterPath": "/opt/homebrew/opt/python@3.13/libexec/bin/python",
+  "files.associations": {
+    "**/ansible/**/*.yml": "ansible"
+  },
+}

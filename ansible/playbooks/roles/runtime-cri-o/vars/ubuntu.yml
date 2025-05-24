@@ -1,0 +1,11 @@
+---
+# cri-o version, should be same as kubernetes version
+runtime_crio_version: "{{ kube_version }}"
+
+# cri-o operating system variant, see https://cri-o.io
+runtime_crio_os: "xUbuntu_22.04"
+
+# cri-o packages for debian distro
+runtime_crio_packages:
+  - cri-o
+  - cri-o-runc

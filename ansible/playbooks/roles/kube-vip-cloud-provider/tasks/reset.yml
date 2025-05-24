@@ -1,0 +1,21 @@
+---
+- name: Delete kube-vip configmap
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: ConfigMap
+    name: kubevip
+    namespace: kube-system
+    wait: true
+  become: false
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  run_once: true
+
+- name: Delete kube-vip cloud provider resources
+  kubernetes.core.k8s:
+    src: https://{{ github_access_token }}@raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml
+    state: absent
+    wait: true
+  become: false
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  run_once: true

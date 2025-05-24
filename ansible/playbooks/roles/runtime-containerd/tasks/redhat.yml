@@ -1,0 +1,34 @@
+---
+- name: Set docker repo distribution
+  ansible.builtin.set_fact:
+    docker_repo_distribution: >-
+      {{ 'centos' if ansible_distribution == 'Rocky' else ansible_distribution | lower }}
+
+- name: Add Docker official GPG key
+  ansible.builtin.rpm_key:
+    key: https://download.docker.com/linux/{{ docker_repo_distribution }}/gpg
+    state: present
+
+- name: Add Docker repository
+  ansible.builtin.yum_repository:
+    name: docker-ce
+    description: Docker CE Repository
+    baseurl: https://download.docker.com/linux/{{ docker_repo_distribution }}/$releasever/$basearch/stable
+    enabled: true
+    gpgcheck: true
+    gpgkey: https://download.docker.com/linux/{{ docker_repo_distribution }}/gpg
+
+- name: Install required packages
+  ansible.builtin.dnf:
+    name:
+      - systemd-resolved
+      - containerd.io
+      - container-selinux
+    state: present
+
+- name: Enable and restart systemd-resolved service
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    daemon_reload: true
+    enabled: true
+    state: restarted

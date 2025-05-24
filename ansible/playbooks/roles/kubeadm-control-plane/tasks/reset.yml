@@ -1,0 +1,8 @@
+---
+- name: Reset kubeadm
+  ansible.builtin.shell: |
+    set -o pipefail
+    kubeadm reset --force
+  args:
+    executable: /bin/bash
+  changed_when: false

@@ -1,0 +1,11 @@
+---
+- name: Delete Helm
+  ansible.builtin.file:
+    path: /usr/local/bin/helm
+    state: absent
+
+- name: Delete Helm dependencies
+  ansible.builtin.package:
+    name:
+      - git
+    state: absent

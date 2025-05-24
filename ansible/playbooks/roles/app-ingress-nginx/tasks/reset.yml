@@ -1,0 +1,12 @@
+---
+- name: Uninstall ingress-nginx helm chart
+  kubernetes.core.helm:
+    name: ingress-nginx
+    namespace: ingress-nginx
+    state: absent
+    wait: true
+
+- name: Remove ingress helm repository
+  kubernetes.core.helm_repository:
+    name: ingress
+    state: absent

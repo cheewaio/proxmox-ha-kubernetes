@@ -1,0 +1,16 @@
+---
+- name: Gathering facts
+  ansible.builtin.setup:
+  run_once: true
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  when:
+    - role_action is defined and role_action == "setup"
+    - container_runtime | default("containerd") == "cri-o"
+
+- name: Include reset tasks
+  ansible.builtin.include_tasks: reset.yml
+  when:
+    - role_action is defined and role_action == "reset"
+    - container_runtime | default("containerd") == "cri-o"

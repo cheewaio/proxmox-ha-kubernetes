@@ -1,0 +1,54 @@
+---
+- name: Get node hostname
+  ansible.builtin.command: hostname
+  register: node_hostname
+  changed_when: false
+
+- name: Check if node is already joined to cluster
+  kubernetes.core.k8s_info:
+    kind: Node
+    name: "{{ node_hostname.stdout }}"
+  become: false
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  register: node_status
+  ignore_errors: true
+
+- name: Set fact for node joined status
+  ansible.builtin.set_fact:
+    node_joined: "{{ node_status is not failed and node_status.resources | length > 0 }}"
+
+- name: Pull images used by kubeadm
+  ansible.builtin.shell: |
+    kubeadm config images pull
+  args:
+    executable: /bin/bash
+  register: pull_images
+  changed_when: pull_images.rc == 0
+  when: not node_joined
+
+- name: Get join command for worker nodes
+  ansible.builtin.shell: |
+    kubeadm token create --print-join-command
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  changed_when: false
+  register: worker_join_command
+  when: not node_joined
+
+- name: Store join command for worker nodes
+  ansible.builtin.set_fact:
+    worker_join_command: "{{ worker_join_command.stdout }}"
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  delegate_facts: true
+  when:
+    - not node_joined
+    - worker_join_command is defined
+
+- name: Join worker node to cluster
+  ansible.builtin.shell: |
+    {{ hostvars[groups['control_planes'][0]]['worker_join_command'] }}
+  changed_when: join_cluster.rc == 0
+  failed_when: join_cluster.rc != 0
+  register: join_cluster
+  when:
+    - not node_joined
+    - worker_join_command is defined

@@ -1,0 +1,6 @@
+---
+- name: Apply Flannel manifests
+  kubernetes.core.k8s:
+    src: "https://{{ github_access_token }}@raw.githubusercontent.com/flannel-io/flannel/{{ flannel_version }}/Documentation/kube-flannel.yml"
+    state: present
+    wait: true

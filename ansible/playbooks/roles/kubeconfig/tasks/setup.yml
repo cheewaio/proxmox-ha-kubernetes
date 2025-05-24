@@ -1,0 +1,42 @@
+---
+- name: Copy Kubernetes admin.conf to user home directory
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    remote_src: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0600"
+  when: inventory_hostname == groups['control_planes'][0]
+
+- name: Copy Kubernetes admin config file to ansible controller
+  ansible.builtin.fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ lookup('env', 'HOME') }}/admin.conf"
+    flat: true
+  when: inventory_hostname == groups['control_planes'][0]
+
+- name: Ensure .kube directory exists on ansible controller
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.kube"
+    state: directory
+    mode: "0755"
+  become: false
+  delegate_to: localhost
+  when: inventory_hostname == groups['control_planes'][0]
+
+- name: Merge admin.conf with default kubeconfig on ansible controller
+  ansible.builtin.shell: |
+    set -o pipefail
+    KUBECONFIG={{ lookup('env', 'HOME') }}/admin.conf:{{ lookup('env', 'HOME') }}/.kube/config kubectl config view --flatten > /tmp/config.new
+    mv /tmp/config.new {{ lookup('env', 'HOME') }}/.kube/config
+    chown {{ ansible_user }}:{{ ansible_user }} {{ lookup('env', 'HOME') }}/.kube/config
+    chmod 0644 {{ lookup('env', 'HOME') }}/.kube/config
+  args:
+    executable: /bin/bash
+  become: false
+  delegate_to: localhost
+  register: merge_config
+  changed_when: merge_config.rc == 0
+  failed_when: merge_config.rc != 0
+  when: inventory_hostname == groups['control_planes'][0]

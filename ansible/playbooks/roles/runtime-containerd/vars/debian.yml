@@ -1,0 +1,5 @@
+---
+# containerd packages for debian distro
+containerd_packages:
+  - containerd.io
+  - docker-ce-cli

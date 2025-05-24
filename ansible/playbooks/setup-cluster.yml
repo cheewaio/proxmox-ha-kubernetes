@@ -1,0 +1,45 @@
+---
+- name: Setup control plane nodes
+  hosts: control_planes
+  become: true
+  serial: 1
+  vars:
+    role_action: setup
+  roles:
+    - { role: system, tags: system }
+    - { role: helm, tags: helm }
+    - { role: runtime-containerd, tags: runtime }
+    - { role: runtime-cri-o, tags: runtime }
+    - { role: kube-vip, tags: kube-vip }
+    - { role: kubeadm-control-plane, tags: kubeadm }
+    - { role: cni-calico, tags: cni }
+    - { role: cni-cilium, tags: cni }
+    - { role: kube-vip-cloud-provider, tags: kube-vip }
+  tags:
+    - control_planes
+
+- name: Setup worker nodes
+  hosts: workers
+  become: true
+  vars:
+    role_action: setup
+  roles:
+    - { role: system, tags: system }
+    - { role: runtime-containerd, tags: runtime }
+    - { role: runtime-cri-o, tags: runtime }
+    - { role: kubeadm-worker, tags: kubeadm } 
+    - { role: csi-longhorn, tags: csi }
+  tags:
+    - workers
+
+- name: Install applications
+  hosts: control_planes[0]
+  become: false
+  vars:
+    role_action: setup
+  roles:
+    - { role: app-ingress-nginx, tags: ingress }
+    - { role: app-cert-manager, tags: cert-manager }
+    - { role: app-portainer, tags: portainer }
+  tags:
+    - apps

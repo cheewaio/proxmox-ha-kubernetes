@@ -1,0 +1,6 @@
+---
+- name: Install open-iscsi
+  ansible.builtin.package:
+    name: open-iscsi
+    state: present
+  when: ansible_os_family == "Debian"

@@ -1,0 +1,12 @@
+---
+- name: Uninstall Cilium helm release
+  kubernetes.core.helm:
+    name: cilium
+    namespace: kube-system
+    state: absent
+    wait: true
+
+- name: Remove cilium helm repository
+  kubernetes.core.helm_repository:
+    name: cilium
+    state: absent

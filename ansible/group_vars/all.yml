@@ -1,0 +1,18 @@
+---
+# Kubernetes version
+kube_version: 1.33
+
+# Container runtime ['cri-o', 'containerd']
+container_runtime: containerd
+
+# Container Network Interface (CNI) plugin to use ['calico', 'cilium', 'flannel']
+cni_plugin: cilium
+
+# Range of IP addresses for pod network
+pod_network_cidr: 10.244.0.0/16
+
+# Range of IP addresses for service network
+service_cidr: 10.96.0.0/16
+
+# Github access token for avoiding rate limits
+github_access_token: "{{ lookup('env', 'GITHUB_ACCESS_TOKEN') | default('') }}"

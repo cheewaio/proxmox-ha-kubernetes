@@ -1,0 +1,20 @@
+---
+- name: Uninstall Calico helm release
+  kubernetes.core.helm:
+    name: calico
+    namespace: tigera-operator
+    state: absent
+    wait: true
+
+- name: Delete tigera-operator namespace
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Namespace
+    name: tigera-operator
+    wait: true
+
+- name: Remove Calico helm repository
+  kubernetes.core.helm_repository:
+    name: projectcalico
+    state: absent

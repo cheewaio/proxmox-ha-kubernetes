@@ -1,0 +1,6 @@
+---
+- name: Install iscsi-initiator-utils
+  ansible.builtin.package:
+    name: iscsi-initiator-utils
+    state: present
+  when: ansible_os_family == "RedHat"

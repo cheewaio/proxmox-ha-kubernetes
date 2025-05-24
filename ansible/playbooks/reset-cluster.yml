@@ -1,0 +1,42 @@
+---
+- name: Uninstall applications
+  hosts: control_planes[0]
+  become: false
+  vars:
+    role_action: reset
+  roles:
+    - { role: app-ingress-nginx, tags: ingress }
+    - { role: app-cert-manager, tags: cert-manager }
+    - { role: app-portainer, tags: portainer }
+  tags:
+    - apps
+
+- name: Reset worker nodes
+  hosts: workers
+  become: true
+  vars:
+    role_action: reset
+  roles:
+    - { role: csi-longhorn, tags: csi }
+    - { role: kubeadm-worker, tags: kubeadm }
+    - { role: runtime-containerd, tags: runtime }
+    - { role: runtime-cri-o, tags: runtime }
+    - { role: system, tags: system }
+  tags:
+    - workers
+
+- name: Reset control plane nodes
+  hosts: control_planes
+  become: true
+  vars:
+    role_action: reset
+  roles:
+    - { role: cni-calico, tags: cni }
+    - { role: cni-cilium, tags: cni }
+    - { role: helm, tags: helm }
+    - { role: kubeadm-control-plane, tags: kubeadm }
+    - { role: runtime-containerd, tags: runtime }
+    - { role: runtime-cri-o, tags: runtime }
+    - { role: system, tags: system }
+  tags:
+    - control-planes

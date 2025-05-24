@@ -1,0 +1,79 @@
+---
+- name: Update APT package cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Upgrade all packages
+  ansible.builtin.apt:
+    upgrade: dist
+
+- name: Install required dependencies
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - figlet
+      - gpg
+    state: present
+
+- name: Install required Python packages for Kubernetes modules
+  ansible.builtin.apt:
+    name:
+      - python3-jsonpatch
+      - python3-kubernetes
+      - python3-pip
+      - python3-yaml
+    state: present
+    update_cache: true
+  when: inventory_hostname == groups['control_planes'][0]
+
+- name: Create Kubernetes keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download Kubernetes GPG key
+  ansible.builtin.get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v{{ kube_version }}/deb/Release.key
+    dest: /tmp/kubernetes.key
+    mode: "0644"
+
+- name: Import Kubernetes GPG key
+  ansible.builtin.shell: |
+    set -o pipefail
+    cat /tmp/kubernetes.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  args:
+    executable: /bin/bash
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kubernetes repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg]
+      https://pkgs.k8s.io/core:/stable:/v{{ kube_version }}/deb/ /
+    state: present
+    filename: kubernetes
+
+- name: Install kubelet, kubeadm and kubectl
+  ansible.builtin.apt:
+    name:
+      - kubelet={{ kube_version }}.*
+      - kubeadm={{ kube_version }}.*
+      - kubectl={{ kube_version }}.*
+    state: present
+    update_cache: true
+    force: true
+    dpkg_options: 'force-confdef,force-confold'
+    force_apt_get: true
+    allow_change_held_packages: true
+
+- name: Hold kubeadm, kubelet and kubectl at minor versions
+  ansible.builtin.copy:
+    dest: /etc/apt/preferences.d/kubernetes
+    content: |
+      Package: kubectl kubeadm kubelet
+      Pin: version {{ kube_version }}.*
+      Pin-Priority: 1000
+    mode: '0644'

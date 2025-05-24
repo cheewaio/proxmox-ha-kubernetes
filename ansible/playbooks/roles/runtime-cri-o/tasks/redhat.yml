@@ -1,0 +1,56 @@
+---
+- name: Add CRI-O stable repository
+  ansible.builtin.yum_repository:
+    name: "isv_cri-o_stable"
+    description: "CRI-O Stable Release ({{ ansible_distribution }})"
+    baseurl: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ runtime_crio_version }}/rpm/"
+    gpgcheck: true
+    gpgkey: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ runtime_crio_version }}/rpm/repodata/repomd.xml.key"
+    enabled: true
+
+- name: Install required dependencies
+  ansible.builtin.dnf:
+    name:
+      - systemd-resolved
+      - container-selinux
+      - iptables
+    state: present
+
+- name: Install CRI-O packages
+  ansible.builtin.dnf:
+    name: "{{ runtime_crio_packages }}"
+    state: present
+
+- name: Create CRI-O configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /etc/crio
+    - /etc/crio/crio.conf.d
+
+- name: Configure CRI-O to use systemd cgroup driver
+  ansible.builtin.copy:
+    dest: /etc/crio/crio.conf.d/02-cgroup-manager.conf
+    content: |
+      [crio.runtime]
+      conmon_cgroup = "pod"
+      cgroup_manager = "systemd"
+    mode: "0644"
+
+- name: Configure default CNI network
+  ansible.builtin.copy:
+    dest: /etc/crio/crio.conf.d/10-crio-network.conf
+    content: |
+      [crio.network]
+      network_dir = "/etc/cni/net.d/"
+      plugin_dir = "/opt/cni/bin/"
+    mode: "0644"
+
+- name: Enable and restart systemd-resolved service
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    daemon_reload: true
+    enabled: true
+    state: restarted

@@ -1,0 +1,22 @@
+---
+- name: Gather OS specific variables
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - files:
+        - "{{ ansible_distribution | lower }}.yml"
+        - "{{ ansible_os_family | lower }}.yml"
+      skip: true
+  when: >
+    ansible_os_family == "RedHat" or
+    ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Setup CRI-O runtime and tools
+  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}.yml"
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: Enable and retart CRI-O service
+  ansible.builtin.systemd:
+    name: crio
+    enabled: true
+    state: restarted
+  when: ansible_os_family in ["Debian", "RedHat"]

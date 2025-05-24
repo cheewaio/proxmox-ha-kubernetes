@@ -1,0 +1,81 @@
+---
+- name: Print OS information
+  ansible.builtin.debug:
+    msg:
+      - "Hostname: {{ ansible_hostname }}"
+      - "OS Family: {{ ansible_os_family }}"
+      - "Distribution: {{ ansible_distribution }}"
+      - "Distribution Release: {{ ansible_distribution_release }}"
+      - "Distribution Version: {{ ansible_distribution_version }}"
+
+- name: Set short hostname
+  ansible.builtin.command:
+    cmd: hostnamectl set-hostname {{ ansible_hostname }}
+  changed_when: ansible_hostname != ansible_facts['hostname']
+
+- name: Check if pfetch exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/pfetch
+  register: pfetch_binary
+
+- name: Download pfetch
+  ansible.builtin.get_url:
+    url: https://{{ github_access_token }}@raw.githubusercontent.com/dylanaraps/pfetch/master/pfetch
+    dest: /usr/local/bin/pfetch
+    mode: "0755"
+  when: not pfetch_binary.stat.exists
+
+- name: Configure MOTD with pfetch
+  ansible.builtin.copy:
+    dest: /etc/profile.d/motd.sh
+    content: |
+      #!/bin/bash
+      figlet "   $(hostname -s)"; echo; /usr/local/bin/pfetch
+    mode: "0644"
+
+- name: Load overlay and br_netfilter kernel modules
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - br_netfilter
+    - overlay
+
+- name: Load required modules on boot
+  ansible.builtin.copy:
+    content: |
+      {{ item }}
+    dest: /etc/modules-load.d/{{ item }}.conf
+    mode: "0644"
+  with_items:
+    - br_netfilter
+    - overlay
+
+- name: Enable iptables to see bridged traffic
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_set: true
+    state: present
+  with_items:
+    - { key: net.bridge.bridge-nf-call-ip6tables, value: 1 }
+    - { key: net.bridge.bridge-nf-call-iptables, value: 1 }
+    - { key: net.ipv4.ip_forward, value: 1 }
+
+- name: Disable swap in fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#].*\sswap\s.*)'
+    replace: '# \1'
+
+- name: Install Kubernetes tools and services
+  ansible.builtin.include_tasks:
+    file: "{{ ansible_os_family | lower }}.yml"
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: Restart kubelet service
+  ansible.builtin.systemd:
+    name: kubelet
+    daemon_reload: true
+    enabled: true
+    state: restarted

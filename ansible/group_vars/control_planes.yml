@@ -1,0 +1,12 @@
+---
+# Enables kube-vip for control plane VIP
+kube_vip_enabled: true
+
+# kube-vip interface
+kube_vip_interface: eth0
+
+# kube-vip address
+kube_vip_address: 192.168.30.100
+
+# kube-vip load balancer address pool
+kube_vip_loadbalancer_ip_range: 192.168.30.200-192.168.30.220

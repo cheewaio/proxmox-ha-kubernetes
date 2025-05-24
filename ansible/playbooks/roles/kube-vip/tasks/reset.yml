@@ -1,0 +1,14 @@
+---
+- name: Delete kube-vip RBAC resources
+  kubernetes.core.k8s:
+    src: https://kube-vip.io/manifests/rbac.yaml
+    state: absent
+    wait: true
+  become: false
+  when:
+    - inventory_hostname == groups['control_planes'][0]
+
+- name: Delete kube-vip static pod manifests
+  ansible.builtin.file:
+    path: /etc/kubernetes/manifests/kube-vip.yaml
+    state: absent

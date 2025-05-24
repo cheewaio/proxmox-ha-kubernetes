@@ -1,0 +1,6 @@
+---
+# containerd version
+containerd_version: "1.7.14"
+
+# pause container version
+pause_version: "3.10"

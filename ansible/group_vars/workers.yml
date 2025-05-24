@@ -1,0 +1,3 @@
+---
+# Container Storage Inteface (CSI) plugin to use ['longhorn']
+csi_plugin: longhorn

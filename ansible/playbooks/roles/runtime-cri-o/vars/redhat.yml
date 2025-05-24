@@ -1,0 +1,11 @@
+---
+# cri-o version, should be same as kubernetes version
+runtime_crio_version: "{{ kube_version }}"
+
+# cri-o supported operating system variant, see https://cri-o.io
+runtime_crio_os: "CentOS_8"
+
+# cri-o packages for redhat distro
+runtime_crio_packages:
+  - cri-o
+  - cri-tools

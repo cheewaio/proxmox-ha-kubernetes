@@ -1,0 +1,14 @@
+---
+- name: Create kube-vip static pod manifests
+  ansible.builtin.template:
+    src: kube-vip.yaml.j2
+    dest: /etc/kubernetes/manifests/kube-vip.yaml
+    mode: "0600"
+
+- name: Modify kube-vip static pod manifests to use super-admin.conf
+  ansible.builtin.lineinfile:
+    path: /etc/kubernetes/manifests/kube-vip.yaml
+    regexp: '^(\s+)path: /etc/kubernetes/admin.conf'
+    line: '\1path: /etc/kubernetes/super-admin.conf'
+    backrefs: true
+  when: inventory_hostname == groups['control_planes'][0]

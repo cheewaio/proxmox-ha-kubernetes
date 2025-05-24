@@ -1,0 +1,26 @@
+---
+- name: Check if the first control plane node is initialized
+  ansible.builtin.stat:
+    path: "/etc/kubernetes/pki/ca.key"
+  register: control_plane_initialized
+  changed_when: control_plane_initialized is defined
+  when: inventory_hostname == groups['control_planes'][0]
+
+- name: Initialize control plane
+  ansible.builtin.include_tasks: init.yml
+  when:
+    - inventory_hostname == groups['control_planes'][0]
+    - not control_plane_initialized.stat.exists
+
+- name: Check if the control plane node is joined
+  ansible.builtin.stat:
+    path: "/etc/kubernetes/pki/ca.key"
+  register: control_plane_joined
+  changed_when: control_plane_joined is defined
+  when: inventory_hostname != groups['control_planes'][0]
+
+- name: Join control plane
+  ansible.builtin.include_tasks: join.yml
+  when:
+    - inventory_hostname != groups['control_planes'][0]
+    - not control_plane_joined.stat.exists

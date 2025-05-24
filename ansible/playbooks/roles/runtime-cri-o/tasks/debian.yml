@@ -1,0 +1,106 @@
+---
+- name: Create CRI-O keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Set CRI-O repository base URL
+  ansible.builtin.set_fact:
+    kubic_repo_base: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{{ runtime_crio_os }}"
+    crio_repo_base: "https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v{{ runtime_crio_version }}/deb"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Download Kubic GPG key
+  ansible.builtin.get_url:
+    url: "{{ kubic_repo_base }}/Release.key"
+    dest: /tmp/kubic-release.key
+    mode: "0644"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Import Kubic GPG key
+  ansible.builtin.shell: |
+    set -o pipefail
+    cat /tmp/kubic-release.key | gpg --dearmor -o /etc/apt/keyrings/kubic-archive-keyring.gpg
+  args:
+    executable: /bin/bash
+    creates: /etc/apt/keyrings/kubic-archive-keyring.gpg
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Add Kubic repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubic-archive-keyring.gpg] {{ kubic_repo_base }}/ /"
+    state: present
+    filename: kubic
+    update_cache: true
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Download CRI-O GPG key
+  ansible.builtin.get_url:
+    url: "{{ crio_repo_base }}/Release.key"
+    dest: /tmp/crio-release.key
+    mode: "0644"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Import CRI-O GPG key
+  ansible.builtin.shell: |
+    set -o pipefail
+    cat /tmp/crio-release.key | gpg --dearmor -o /etc/apt/keyrings/crio-archive-keyring.gpg
+  args:
+    executable: /bin/bash
+    creates: /etc/apt/keyrings/crio-archive-keyring.gpg
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Add CRI-O repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/crio-archive-keyring.gpg] {{ crio_repo_base }}/ /"
+    state: present
+    filename: crio
+    update_cache: true
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Install CRI-O packages
+  ansible.builtin.apt:
+    name: "{{ runtime_crio_packages }}"
+    state: present
+    update_cache: true
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Create CRI-O configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /etc/crio
+    - /etc/crio/crio.conf.d
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Configure CRI-O to use systemd cgroup driver
+  ansible.builtin.copy:
+    dest: /etc/crio/crio.conf.d/02-cgroup-manager.conf
+    content: |
+      [crio.runtime]
+      conmon_cgroup = "pod"
+      cgroup_manager = "systemd"
+    mode: "0644"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Configure default CNI network
+  ansible.builtin.copy:
+    dest: /etc/crio/crio.conf.d/10-crio-network.conf
+    content: |
+      [crio.network]
+      network_dir = "/etc/cni/net.d/"
+      plugin_dir = "/opt/cni/bin/"
+    mode: "0644"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Enable and start CRI-O service
+  ansible.builtin.systemd:
+    name: crio
+    state: started
+    enabled: true
+    daemon_reload: true
+  when: ansible_distribution in ["Debian", "Ubuntu"]

@@ -1,0 +1,12 @@
+---
+- name: Uninstall cert-manager helm chart
+  kubernetes.core.helm:
+    name: cert-manager
+    namespace: cert-manager
+    state: absent
+    wait: true
+
+- name: Remove jetstack helm repository
+  kubernetes.core.helm_repository:
+    name: jetstack
+    state: absent
