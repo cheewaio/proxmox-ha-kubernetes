@@ -1,0 +1,40 @@
+---
+- name: Upgrade kubeadm, kubelet, and kubectl packages
+  ansible.builtin.include_tasks:
+    file: "{{ ansible_os_family | lower }}.yml"
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: Cordon worker node
+  ansible.builtin.command:
+    kubectl cordon {{ ansible_hostname }}
+  become: false
+  register: cordon_worker
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  changed_when: cordon_worker.rc == 0
+  when: inventory_hostname in groups['workers']
+
+- name: Drain worker node
+  ansible.builtin.command:
+    kubectl drain {{ ansible_hostname }} --ignore-daemonsets --delete-emptydir-data
+  become: false
+  register: drain_worker
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  changed_when: drain_worker.rc == 0
+  when: inventory_hostname in groups['workers']
+
+- name: Upgrade kubeadm on worker node
+  ansible.builtin.command:
+    kubeadm upgrade node
+  register: upgrade_node
+  changed_when: upgrade_node.rc == 0
+  when: inventory_hostname in groups['workers']
+  notify: Restart kubelet service
+
+- name: Uncordon worker node
+  ansible.builtin.command:
+    kubectl uncordon {{ ansible_hostname }}
+  become: false
+  register: uncordon_worker
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  changed_when: uncordon_worker.rc == 0
+  when: inventory_hostname in groups['workers']

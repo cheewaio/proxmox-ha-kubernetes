@@ -12,6 +12,7 @@
     - { role: runtime-cri-o, tags: runtime }
     - { role: kube-vip, tags: kube-vip }
     - { role: kubeadm-control-plane, tags: kubeadm }
+    - { role: kubeconfig, tags: kubeconfig }
     - { role: cni-calico, tags: cni }
     - { role: cni-cilium, tags: cni }
     - { role: kube-vip-cloud-provider, tags: kube-vip }
@@ -27,7 +28,7 @@
     - { role: system, tags: system }
     - { role: runtime-containerd, tags: runtime }
     - { role: runtime-cri-o, tags: runtime }
-    - { role: kubeadm-worker, tags: kubeadm } 
+    - { role: kubeadm-worker, tags: kubeadm }
     - { role: csi-longhorn, tags: csi }
   tags:
     - workers

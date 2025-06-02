@@ -1,4 +1,21 @@
 ---
+- name: Check if the first control plane node is initialized
+  ansible.builtin.stat:
+    path: "/etc/kubernetes/pki/ca.key"
+  register: control_plane_initialized
+  changed_when: control_plane_initialized is defined
+  when: inventory_hostname == groups['control_planes'][0]
+
+- name: Ensure .kube directory exists in user home directory
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    mode: "0700"
+  become: false
+  when:
+    - inventory_hostname == groups['control_planes'][0]
+    - control_plane_initialized.stat.exists
+
 - name: Copy Kubernetes admin.conf to user home directory
   ansible.builtin.copy:
     src: /etc/kubernetes/admin.conf
@@ -7,36 +24,41 @@
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: "0600"
-  when: inventory_hostname == groups['control_planes'][0]
+  when:
+    - inventory_hostname == groups['control_planes'][0]  
+    - control_plane_initialized.stat.exists
 
-- name: Copy Kubernetes admin config file to ansible controller
+- name: Ensure .kube directory exists on ansible controller host
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.kube"
+    state: directory
+    mode: '0700'
+  become: false
+  delegate_to: localhost
+  when:
+    - inventory_hostname == groups['control_planes'][0]
+    - control_plane_initialized.stat.exists
+
+- name: Copy Kubernetes admin config file to ansible controller host
   ansible.builtin.fetch:
     src: /etc/kubernetes/admin.conf
     dest: "{{ lookup('env', 'HOME') }}/admin.conf"
     flat: true
-  when: inventory_hostname == groups['control_planes'][0]
+  when:
+    - inventory_hostname == groups['control_planes'][0]
+    - control_plane_initialized.stat.exists
 
-- name: Ensure .kube directory exists on ansible controller
-  ansible.builtin.file:
-    path: "{{ lookup('env', 'HOME') }}/.kube"
-    state: directory
-    mode: "0755"
-  become: false
-  delegate_to: localhost
-  when: inventory_hostname == groups['control_planes'][0]
-
-- name: Merge admin.conf with default kubeconfig on ansible controller
+- name: Merge admin.conf with kubeconfig on ansible controller host
   ansible.builtin.shell: |
     set -o pipefail
-    KUBECONFIG={{ lookup('env', 'HOME') }}/admin.conf:{{ lookup('env', 'HOME') }}/.kube/config kubectl config view --flatten > /tmp/config.new
-    mv /tmp/config.new {{ lookup('env', 'HOME') }}/.kube/config
-    chown {{ ansible_user }}:{{ ansible_user }} {{ lookup('env', 'HOME') }}/.kube/config
-    chmod 0644 {{ lookup('env', 'HOME') }}/.kube/config
+    KUBECONFIG=$HOME/admin.conf:$HOME/.kube/config kubectl config view --flatten >$HOME/merged-kubeconfig
+    mv $HOME/merged-kubeconfig ${HOME}/.kube/config
+    chmod 600 ${HOME}/.kube/config
   args:
     executable: /bin/bash
+    creates: "{{ lookup('env', 'HOME') }}/.kube/config"
   become: false
   delegate_to: localhost
-  register: merge_config
-  changed_when: merge_config.rc == 0
-  failed_when: merge_config.rc != 0
-  when: inventory_hostname == groups['control_planes'][0]
+  when:
+    - inventory_hostname == groups['control_planes'][0]
+    - control_plane_initialized.stat.exists

@@ -1,0 +1,48 @@
+---
+- name: Upgrade kubeadm, kubelet, and kubectl packages
+  ansible.builtin.include_tasks:
+    file: "{{ ansible_os_family | lower }}.yml"
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: Cordon control plane node
+  ansible.builtin.command:
+    kubectl cordon {{ ansible_hostname }}
+  become: false
+  register: cordon_control_plane
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  changed_when: cordon_control_plane.rc == 0
+  when: inventory_hostname in groups['control_planes']
+
+- name: Apply kubeadm upgrade on the first control plane
+  ansible.builtin.command:
+    kubeadm upgrade apply {{ kube_version }} -y
+  register: upgrade_apply
+  changed_when: upgrade_apply.rc == 0
+  when: inventory_hostname == groups['control_planes'][0]
+  notify: Restart kubelet service
+
+- name: Drain control plane node
+  ansible.builtin.command:
+    kubectl drain {{ ansible_hostname }} --ignore-daemonsets --delete-emptydir-data
+  become: false
+  register: drain_control_plane
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  changed_when: drain_control_plane.rc == 0
+  when: inventory_hostname != groups['control_planes'][0]
+
+- name: Upgrade kubeadm on control plane node
+  ansible.builtin.command:
+    kubeadm upgrade node
+  register: upgrade_node
+  changed_when: upgrade_node.rc == 0
+  when: inventory_hostname != groups['control_planes'][0]
+  notify: Restart kubelet service
+
+- name: Uncordon control plane node
+  ansible.builtin.command:
+    kubectl uncordon {{ ansible_hostname }}
+  become: false
+  register: uncordon_control_plane
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  changed_when: uncordon_control_plane.rc == 0
+  when: inventory_hostname in groups['control_planes']

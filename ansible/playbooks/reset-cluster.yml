@@ -33,10 +33,10 @@
   roles:
     - { role: cni-calico, tags: cni }
     - { role: cni-cilium, tags: cni }
-    - { role: helm, tags: helm }
     - { role: kubeadm-control-plane, tags: kubeadm }
     - { role: runtime-containerd, tags: runtime }
     - { role: runtime-cri-o, tags: runtime }
+    - { role: helm, tags: helm }
     - { role: system, tags: system }
   tags:
-    - control-planes
+    - control_planes

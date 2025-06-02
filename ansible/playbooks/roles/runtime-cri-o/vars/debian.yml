@@ -1,6 +1,6 @@
 ---
 # cri-o version, should be same as kubernetes version
-runtime_crio_version: "{{ kube_version }}"
+runtime_crio_version: "{{ kube_short_version }}"
 
 # cri-o os for kubic repo
 runtime_crio_os: "Debian_12"

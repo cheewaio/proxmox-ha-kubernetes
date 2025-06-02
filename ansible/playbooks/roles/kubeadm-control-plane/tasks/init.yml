@@ -1,7 +1,7 @@
 ---
 - name: Pull images used by kubeadm
   ansible.builtin.shell: |
-    kubeadm config images pull --kubernetes-version=v{{ kube_version }}.0
+    kubeadm config images pull --kubernetes-version=v{{ kube_version }}
   args:
     executable: /bin/bash
   register: pull_images
@@ -14,70 +14,23 @@
     mode: "0755"
   loop:
     - /etc/kubernetes/manifests
-    - "/home/{{ ansible_user }}/.kube"
+
+- name: Prepare kubeadm init config
+  ansible.builtin.template:
+    src: init-config.yml.j2
+    dest: "/home/{{ ansible_user }}/kubeadm-init-config.yml"
+    mode: "0600"
+    force: true
+  register: kubeadm_init_config
+  changed_when: kubeadm_init_config.changed
 
 - name: Initialize Kubernetes cluster
   ansible.builtin.shell: |
     set -o pipefail
-    kubeadm init --pod-network-cidr="{{ pod_network_cidr }}" \
-                 --service-cidr="{{ service_cidr }}" \
+    kubeadm init --config="/home/{{ ansible_user }}/kubeadm-init-config.yml" \
                  --upload-certs | tee "/home/{{ ansible_user }}/kubeadm-init.log"
   args:
     executable: /bin/bash
   register: init_cluster
   changed_when: init_cluster.rc == 0
   failed_when: init_cluster.rc != 0
-  when: not kube_vip_enabled
-
-- name: Initialize Kubernetes cluster with KUBE VIP
-  ansible.builtin.shell: |
-    set -o pipefail
-    kubeadm init --control-plane-endpoint="{{ kube_vip_address }}" \
-                 --apiserver-cert-extra-sans="{{ kube_vip_address }}" \
-                 --pod-network-cidr="{{ pod_network_cidr }}" \
-                 --service-cidr="{{ service_cidr }}" \
-                 --upload-certs | tee "/home/{{ ansible_user }}/kubeadm-init.log"
-  args:
-    executable: /bin/bash
-  register: init_cluster
-  changed_when: init_cluster.rc == 0
-  failed_when: init_cluster.rc != 0
-  when: kube_vip_enabled
-
-- name: Copy admin.conf to user home directory
-  ansible.builtin.copy:
-    src: /etc/kubernetes/admin.conf
-    dest: "/home/{{ ansible_user }}/.kube/config"
-    remote_src: true
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: "0600"
-  when: init_cluster is succeeded
-
-- name: "Copy Kubernetes admin config file to ansible controller host"
-  ansible.builtin.fetch:
-    src: /etc/kubernetes/admin.conf
-    dest: "{{ lookup('env', 'HOME') }}/admin.conf"
-    flat: true
-  when: init_cluster is succeeded
-
-- name: "Ensure .kube directory exists on ansible controller"
-  ansible.builtin.file:
-    path: "{{ lookup('env', 'HOME') }}/.kube"
-    state: directory
-    mode: '0755'
-  become: false
-  delegate_to: localhost
-  when: init_cluster is succeeded
-
-- name: Merge kubeconfig with local config
-  ansible.builtin.shell: |
-    set -o pipefail
-    KUBECONFIG=$HOME/admin.conf:$HOME/.kube/config kubectl config view --flatten >$HOME/merged-kubeconfig
-    mv $HOME/merged-kubeconfig ${HOME}/.kube/config
-    chmod 600 ${HOME}/.kube/config
-  args:
-    executable: /bin/bash
-  become: false
-  delegate_to: localhost
-  when: init_cluster is succeeded

@@ -1,38 +1,12 @@
 ---
-- name: Update APT package cache
-  ansible.builtin.apt:
-    update_cache: true
-
-- name: Upgrade all packages
-  ansible.builtin.apt:
-    upgrade: dist
-
-- name: Install required dependencies
-  ansible.builtin.apt:
-    name:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - figlet
-      - gpg
-    state: present
-
-- name: Install required Python packages for Kubernetes modules
-  ansible.builtin.apt:
-    name:
-      - python3-jsonpatch
-      - python3-kubernetes
-      - python3-pip
-      - python3-yaml
-    state: present
-    update_cache: true
-  when: inventory_hostname == groups['control_planes'][0]
-
-- name: Create Kubernetes keyrings directory
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: "0755"
+- name: Unhold kubeadm, kubelet and kubectl packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: install
+  loop:
+    - kubeadm
+    - kubelet
+    - kubectl
 
 - name: Download Kubernetes GPG key
   ansible.builtin.get_url:
@@ -48,6 +22,11 @@
     executable: /bin/bash
     creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
+- name: Remove Kubernetes repository
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    state: absent
+
 - name: Add Kubernetes repository
   ansible.builtin.apt_repository:
     repo: >-
@@ -56,7 +35,11 @@
     state: present
     filename: kubernetes
 
-- name: Install kubeadm, kubelet and kubectl packages
+- name: Update apt package cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Upgrade kubeadm, kubelet, and kubectl packages
   ansible.builtin.apt:
     name:
       - kubelet={{ kube_version }}*
@@ -69,7 +52,7 @@
     force_apt_get: true
     allow_change_held_packages: true
 
-- name: Hold kubeadm, kubelet and kubectl versions
+- name: Hold kubeadm, kubelet, and kubectl versions
   ansible.builtin.dpkg_selections:
     name: "{{ item }}"
     selection: hold

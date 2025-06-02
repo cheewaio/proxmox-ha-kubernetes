@@ -1,0 +1,28 @@
+---
+- name: Upgrade control plane nodes
+  hosts: control_planes
+  become: true
+  serial: 1
+  vars:
+    role_action: upgrade
+  roles:
+    - { role: system, tags: system }
+    - { role: runtime-containerd, tags: runtime }
+    - { role: runtime-cri-o, tags: runtime }
+    - { role: kubeadm-upgrade, tags: kubeadm }
+  tags:
+    - control_planes
+
+- name: Upgrade worker nodes
+  hosts: workers
+  become: true
+  serial: 1
+  vars:
+    role_action: upgrade
+  roles:
+    - { role: system, tags: system }
+    - { role: runtime-containerd, tags: runtime }
+    - { role: runtime-cri-o, tags: runtime }
+    - { role: kubeadm-upgrade, tags: kubeadm }
+  tags:
+    - workers

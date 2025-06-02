@@ -1,0 +1,11 @@
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+clusterName: {{ kube_cluster_name | default('kubernetes') }}
+controlPlaneEndpoint: {{ kube_vip_address if kube_vip_enabled else ansible_default_ipv4.address }}:6443
+apiServer:
+  certSANs:
+    - {{ kube_vip_address if kube_vip_enabled else ansible_default_ipv4.address }}
+networking:
+  podSubnet: {{ pod_network_cidr }}
+  serviceSubnet: {{ service_cidr }}

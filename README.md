@@ -66,7 +66,7 @@ variable "worker_node_memory" { default = 6144 }   # Memory in MB
 Edit `ansible/group_vars/all.yml` to configure Kubernetes settings:
 ```yaml
 # Kubernetes Settings
-kubernetes_version: "1.32"           # Kubernetes version
+kubernetes_version: "1.32.0"         # Kubernetes version
 container_runtime: "containerd"      # Container runtime (containerd/cri-o)
 cni_plugin: "cilium"                 # CNI plugin (calico/cilium/flannel)
 pod_cidr: "10.244.0.0/16"            # Pod network CIDR
@@ -114,6 +114,31 @@ This will:
 - Deploy CNI plugin (Calico/Cilium/Flannel)
 - Deploy MetalLB for load balancing
 - Configure ingress controller
+
+### Upgrade Kubernetes Cluster
+
+To upgrade the Kubernetes cluster to a newer version:
+
+1. Update the Kubernetes version in `ansible/group_vars/all.yml`:
+```yaml
+kubernetes_version: "1.33.0"  # Set to desired version
+```
+
+2. Run the upgrade playbook:
+```bash
+make cluster-upgrade
+```
+
+This will:
+- Upgrade control plane components one node at a time
+- Drain and upgrade worker nodes sequentially
+- Update CNI and other cluster addons
+- Verify cluster health after upgrade
+
+> **Note**: It's recommended to:
+> - Review the [official upgrade notes](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for your target version
+> - Backup etcd data before upgrading
+> - Upgrade only one minor version at a time (e.g., 1.32.x → 1.33.x)
 
 ### Clean Up
 

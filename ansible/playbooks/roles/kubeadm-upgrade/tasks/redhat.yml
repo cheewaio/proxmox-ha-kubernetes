@@ -1,0 +1,41 @@
+---
+- name: Unhold kubeadm, kubelet and kubectl packages
+  ansible.builtin.command:
+    cmd: "dnf versionlock delete {{ item }}"
+  register: versionlock_unhold_output
+  changed_when: versionlock_unhold_output.rc != 0
+  with_items:
+    - kubeadm
+    - kubelet
+    - kubectl
+
+- name: Update Kubernetes repository
+  ansible.builtin.yum_repository:
+    name: "kubernetes"
+    description: "Kubernetes"
+    file: "kubernetes"
+    baseurl: "https://pkgs.k8s.io/core:/stable:/v{{ kube_short_version }}/rpm/"
+    gpgcheck: true
+    gpgkey: "https://pkgs.k8s.io/core:/stable:/v{{ kube_short_version }}/rpm/repodata/repomd.xml.key"
+    enabled: true
+    repo_gpgcheck: true
+
+- name: Upgrade kubeadm, kubelet and kubectl packages
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+    disable_excludes: kubernetes
+  with_items:
+    - kubeadm-{{ kube_version }}
+    - kubelet-{{ kube_version }}
+    - kubectl-{{ kube_version }}
+
+- name: Hold kubeadm, kubelet and kubectl versions
+  ansible.builtin.command:
+    cmd: "dnf versionlock add {{ item }}"
+  register: versionlock_hold_output
+  changed_when: versionlock_hold_output.rc != 0
+  with_items:
+    - kubeadm
+    - kubelet
+    - kubectl

@@ -1,7 +1,7 @@
 ---
 - name: Pull images used by kubeadm
   ansible.builtin.shell: |
-    kubeadm config images pull --kubernetes-version=v{{ kube_version }}.0
+    kubeadm config images pull --kubernetes-version=v{{ kube_version }}
   args:
     executable: /bin/bash
   register: pull_images

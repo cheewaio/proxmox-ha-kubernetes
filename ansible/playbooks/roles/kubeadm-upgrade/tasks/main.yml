@@ -1,0 +1,13 @@
+---
+- name: Gathering facts
+  ansible.builtin.setup:
+
+- name: Include upgrade control plane tasks
+  ansible.builtin.include_tasks:
+    file: control_plane.yml
+  when: inventory_hostname in groups['control_planes']
+
+- name: Include upgrade worker node tasks
+  ansible.builtin.include_tasks:
+    file: worker.yml
+  when: inventory_hostname in groups['workers']

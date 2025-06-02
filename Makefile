@@ -35,6 +35,9 @@ ANSIBLE_ARGS ?=
 cluster: ## Run Ansible to configure a Kubernetes cluster
 	@ cd ansible && ansible-playbook playbooks/setup-cluster.yml $(ANSIBLE_ARGS)
 
+cluster-upgrade: ## Run Ansible to upgrade the cluster nodes
+	@ cd ansible && ansible-playbook playbooks/upgrade-cluster.yml $(ANSIBLE_ARGS)
+
 cluster-reset: ## Run Ansible to reset the cluster nodes
 	@ cd ansible && ansible-playbook playbooks/reset-cluster.yml $(ANSIBLE_ARGS)
 
