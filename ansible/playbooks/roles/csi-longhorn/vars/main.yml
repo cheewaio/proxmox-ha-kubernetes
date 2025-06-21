@@ -1,1 +1,2 @@
-longhorn_chart_version: "1.8.1"
+# https://artifacthub.io/packages/helm/longhorn/longhorn
+longhorn_chart_version: "1.9.0"

@@ -25,7 +25,7 @@
     group: "{{ ansible_user }}"
     mode: "0600"
   when:
-    - inventory_hostname == groups['control_planes'][0]  
+    - inventory_hostname == groups['control_planes'][0]
     - control_plane_initialized.stat.exists
 
 - name: Ensure .kube directory exists on ansible controller host
@@ -51,14 +51,13 @@
 - name: Merge admin.conf with kubeconfig on ansible controller host
   ansible.builtin.shell: |
     set -o pipefail
-    KUBECONFIG=$HOME/admin.conf:$HOME/.kube/config kubectl config view --flatten >$HOME/merged-kubeconfig
-    mv $HOME/merged-kubeconfig ${HOME}/.kube/config
-    chmod 600 ${HOME}/.kube/config
+    KUBECONFIG=$HOME/admin.conf:$HOME/.kube/config kubectl config view --flatten --merge > $HOME/.kube/config
   args:
     executable: /bin/bash
-    creates: "{{ lookup('env', 'HOME') }}/.kube/config"
   become: false
   delegate_to: localhost
+  register: merge_kubeconfig_result
+  changed_when: true
   when:
     - inventory_hostname == groups['control_planes'][0]
     - control_plane_initialized.stat.exists

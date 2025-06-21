@@ -1,6 +1,7 @@
 ---
 # Kubernetes semantic version
-kube_version: 1.32.5
+# https://kubernetes.io/releases
+kube_version: 1.33.2
 
 # Kubernetes short version
 kube_short_version: "{{ kube_version.split('.')[0:2] | join('.') }}"

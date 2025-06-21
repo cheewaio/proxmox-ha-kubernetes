@@ -41,6 +41,9 @@ cluster-upgrade: ## Run Ansible to upgrade the cluster nodes
 cluster-reset: ## Run Ansible to reset the cluster nodes
 	@ cd ansible && ansible-playbook playbooks/reset-cluster.yml $(ANSIBLE_ARGS)
 
+cluster-kubeconfig: ## Generating kubeconfig file for the cluster
+	@ cd ansible && ansible-playbook playbooks/setup-cluster.yml -t kubeconfig
+
 ############################################################
 ##@ Nodes
 ############################################################
