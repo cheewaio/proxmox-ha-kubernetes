@@ -20,8 +20,11 @@ all: ## Run all tasks to provision a Kubernetes cluster
 ##@ Kubernetetes applications
 ############################################################
 
-apps: ## Run Ansible to install Kubernetes applications
+apps: ## Run Ansible to install Kubernetes core applications
 	@ cd ansible && ansible-playbook playbooks/setup-cluster.yml -t apps
+
+apps-extras: ## Run Ansible to install Kubernetes extra applications
+	@ cd ansible && ansible-playbook playbooks/setup-cluster.yml -t apps-extras
 
 apps-reset: ## Run Ansible to reset Kubernetes applications
 	@ cd ansible && ansible-playbook playbooks/reset-cluster.yml -t apps

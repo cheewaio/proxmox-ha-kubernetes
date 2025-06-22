@@ -1,0 +1,12 @@
+---
+- name: Uninstall portainer helm chart
+  kubernetes.core.helm:
+    name: portainer
+    namespace: portainer
+    state: absent
+    wait: true
+
+- name: Remove portainer helm repository
+  kubernetes.core.helm_repository:
+    name: portainer
+    state: absent

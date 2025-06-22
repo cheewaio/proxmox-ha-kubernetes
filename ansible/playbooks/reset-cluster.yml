@@ -1,4 +1,15 @@
 ---
+- name: Uninstall extra applications
+  hosts: control_planes[0]
+  become: false
+  vars:
+    role_action: reset
+  roles:
+    - { role: app-portainer, tags: portainer }
+    - { role: app-kestra, tags: kestra }
+  tags:
+    - apps-extras
+
 - name: Uninstall applications
   hosts: control_planes[0]
   become: false

@@ -33,7 +33,7 @@
   tags:
     - workers
 
-- name: Install applications
+- name: Install core applications
   hosts: control_planes[0]
   become: false
   vars:
@@ -41,6 +41,16 @@
   roles:
     - { role: app-ingress-nginx, tags: ingress }
     - { role: app-cert-manager, tags: cert-manager }
-    - { role: app-portainer, tags: portainer }
   tags:
     - apps
+
+- name: Install extra applications
+  hosts: control_planes[0]
+  become: false
+  vars:
+    role_action: setup
+  roles:
+    - { role: app-portainer, tags: portainer }
+    - { role: app-kestra, tags: kestra }
+  tags:
+    - apps-extras

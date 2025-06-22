@@ -1,0 +1,61 @@
+---
+- name: Add kestra Helm repository
+  kubernetes.core.helm_repository:
+    name: kestra
+    repo_url: https://helm.kestra.io
+
+- name: Install kestra helm chart
+  kubernetes.core.helm:
+    name: kestra
+    chart_ref: kestra/kestra
+    chart_version: "{{ kestra_chart_version }}"
+    release_namespace: kestra
+    create_namespace: true
+    wait: true
+    values:
+      service:
+        type: ClusterIP
+      deployments:
+        webserver:
+          enabled: true
+        executor:
+          enabled: true
+        indexer:
+          enabled: true
+        scheduler:
+          enabled: true
+        worker:
+          enabled: true
+        standalone:
+          enabled: false
+      dind:
+        image:
+          tag: dind
+        args:
+          - --log-level=fatal
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+      extraEnv:
+        - name: SECRET_DB_USERNAME
+          value: "{{ (lookup('env', 'KESTRA_DB_USERNAME') | default('admin')) | b64encode }}"
+        - name: SECRET_DB_PASSWORD
+          value: "{{ (lookup('env', 'KESTRA_DB_PASSWORD') | default(lookup('ansible.builtin.password', '/dev/null', seed=inventory_hostname))) | b64encode }}"
+      ingress:
+        enabled: true
+        className: nginx
+        annotations:
+          cert-manager.io/cluster-issuer: selfsigned-issuer
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        hosts:
+          - host: kestra.home.arpa
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - secretName: kestra-tls
+            hosts:
+              - kestra.home.arpa
