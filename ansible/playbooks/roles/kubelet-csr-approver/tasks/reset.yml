@@ -1,0 +1,12 @@
+---
+- name: Uninstall kubelet-csr-approver helm release
+  kubernetes.core.helm:
+    name: kubelet-csr-approver
+    release_namespace: kube-system
+    state: absent
+    wait: true
+
+- name: Remove kubelet-csr-approver Helm repository
+  kubernetes.core.helm_repository:
+    name: kubelet-csr-approver
+    state: absent

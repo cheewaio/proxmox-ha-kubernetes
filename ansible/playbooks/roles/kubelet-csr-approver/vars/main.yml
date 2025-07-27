@@ -1,0 +1,2 @@
+# https://artifacthub.io/packages/helm/kubelet-csr-approver/kubelet-csr-approver
+kubelet_csr_approver_chart_version: "1.2.10"

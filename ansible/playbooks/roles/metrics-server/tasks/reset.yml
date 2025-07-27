@@ -1,0 +1,12 @@
+---
+- name: Uninstall metrics-server helm release
+  kubernetes.core.helm:
+    name: metrics-server
+    release_namespace: kube-system
+    state: absent
+    wait: true
+
+- name: Remove metrics-server Helm repository
+  kubernetes.core.helm_repository:
+    name: metrics-server
+    state: absent

@@ -1,0 +1,21 @@
+---
+- name: Gathering facts
+  ansible.builtin.setup:
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks:
+    file: setup.yml
+    apply:
+      become: false
+  when:
+    - role_action is defined and role_action == "setup"
+    - inventory_hostname == groups['control_planes'][0]
+
+- name: Include reset tasks
+  ansible.builtin.include_tasks:
+    file: reset.yml
+    apply:
+      become: false
+  when:
+    - role_action is defined and role_action == "reset"
+    - inventory_hostname == groups['control_planes'][0]

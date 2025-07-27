@@ -3,15 +3,19 @@
   ansible.builtin.setup:
 
 - name: Include setup tasks
-  ansible.builtin.include_tasks: setup.yml
+  ansible.builtin.include_tasks:
+    file: setup.yml
+    apply:
+      become: false
   when:
-    - csi_plugin == "longhorn"
     - inventory_hostname in groups['workers']
     - role_action is defined and role_action == "setup"
 
 - name: Include reset tasks
-  ansible.builtin.include_tasks: reset.yml
+  ansible.builtin.include_tasks:
+    file: reset.yml
+    apply:
+      become: false
   when:
-    - csi_plugin == "longhorn"
     - inventory_hostname in groups['workers']
     - role_action is defined and role_action == "reset"

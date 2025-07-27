@@ -2,7 +2,7 @@
 - name: Install longhorn dependencies
   ansible.builtin.include_tasks:
     file: "{{ ansible_os_family | lower }}.yml"
-  when: 
+  when:
     - inventory_hostname in groups['workers']
     - ansible_os_family in ["Debian", "RedHat"]
 
@@ -11,7 +11,7 @@
     name: iscsid
     enabled: true
     state: started
-  when: 
+  when:
     - inventory_hostname in groups['workers']
     - ansible_os_family in ["Debian", "RedHat"]
 
@@ -22,7 +22,6 @@
   become: false
   delegate_to: "{{ groups['control_planes'][0] }}"
   run_once: true
-  register: longhorn_repo
 
 - name: Install longhorn helm chart
   kubernetes.core.helm:
@@ -35,4 +34,3 @@
   become: false
   delegate_to: "{{ groups['control_planes'][0] }}"
   run_once: true
-  when: longhorn_repo.changed

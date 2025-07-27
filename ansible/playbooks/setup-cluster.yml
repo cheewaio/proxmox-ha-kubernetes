@@ -29,6 +29,7 @@
     - { role: runtime-containerd, tags: runtime }
     - { role: runtime-cri-o, tags: runtime }
     - { role: kubeadm-worker, tags: kubeadm }
+    - { role: kubelet-csr-approver, tags: kubelet-csr-approver }
     - { role: csi-longhorn, tags: csi }
   tags:
     - workers
@@ -41,6 +42,7 @@
   roles:
     - { role: app-ingress-nginx, tags: ingress }
     - { role: app-cert-manager, tags: cert-manager }
+    - { role: metrics-server, tags: metrics-server }
   tags:
     - apps
 

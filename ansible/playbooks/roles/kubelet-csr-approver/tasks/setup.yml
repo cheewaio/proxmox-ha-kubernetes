@@ -1,0 +1,23 @@
+---
+- name: Add kubelet-csr-approver Helm repository
+  kubernetes.core.helm_repository:
+    name: kubelet-csr-approver
+    repo_url: https://postfinance.github.io/kubelet-csr-approver
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  run_once: true
+
+- name: Install kubelet-csr-approver helm chart
+  kubernetes.core.helm:
+    name: kubelet-csr-approver
+    chart_ref: kubelet-csr-approver/kubelet-csr-approver
+    chart_version: "{{ kubelet_csr_approver_chart_version }}"
+    release_namespace: kube-system
+    create_namespace: false
+    wait: true
+    values:
+      providerRegex: "^(kube-control-plane|kube-worker)"
+      providerIpPrefixes:
+        - "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.prefix }}"
+      bypassDnsResolution: true
+  delegate_to: "{{ groups['control_planes'][0] }}"
+  run_once: true

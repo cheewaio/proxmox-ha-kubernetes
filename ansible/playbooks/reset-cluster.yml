@@ -28,6 +28,7 @@
   vars:
     role_action: reset
   roles:
+    - { role: kubelet-csr-approver, tags: kubelet-csr-approver }
     - { role: csi-longhorn, tags: csi }
     - { role: kubeadm-worker, tags: kubeadm }
     - { role: runtime-containerd, tags: runtime }
@@ -42,6 +43,7 @@
   vars:
     role_action: reset
   roles:
+    - { role: metrics-server, tags: metrics-server }
     - { role: cni-calico, tags: cni }
     - { role: cni-cilium, tags: cni }
     - { role: kubeadm-control-plane, tags: kubeadm }
