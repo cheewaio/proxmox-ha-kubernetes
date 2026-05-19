@@ -1,7 +1,37 @@
 ---
-- name: Setup containerd runtime
-  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}.yml"
-  when: ansible_os_family in ["Debian", "RedHat"]
+- name: Download containerd tarball
+  ansible.builtin.get_url:
+    url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+    dest: /tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz
+    mode: "0644"
+
+- name: Extract containerd tarball
+  ansible.builtin.unarchive:
+    src: /tmp/containerd-{{ containerd_version }}-linux-amd64.tar.gz
+    dest: /usr
+    remote_src: true
+
+- name: Install RedHat-specific dependencies
+  when: ansible_os_family == "RedHat"
+  block:
+    - name: Install container-selinux
+      ansible.builtin.dnf:
+        name: container-selinux
+        state: present
+    - name: Install and enable systemd-resolved
+      ansible.builtin.dnf:
+        name: systemd-resolved
+        state: present
+    - name: Enable and restart systemd-resolved
+      ansible.builtin.systemd:
+        name: systemd-resolved
+        daemon_reload: true
+        enabled: true
+        state: restarted
+
+- name: Reload systemd to pick up containerd service
+  ansible.builtin.systemd:
+    daemon_reload: true
 
 - name: Create containerd config directory
   ansible.builtin.file:
@@ -23,8 +53,8 @@
 - name: Update containerd sandbox image
   ansible.builtin.replace:
     path: /etc/containerd/config.toml
-    regexp: "sandbox_image = \"registry.k8s.io/pause:3.8\""
-    replace: "sandbox_image = \"registry.k8s.io/pause:3.10\""
+    regexp: 'sandbox_image = "registry\.k8s\.io/pause:3\.\d+"'
+    replace: 'sandbox_image = "registry.k8s.io/pause:{{ pause_version }}"'
 
 - name: Configure containerd to use systemd cgroup driver
   ansible.builtin.replace:

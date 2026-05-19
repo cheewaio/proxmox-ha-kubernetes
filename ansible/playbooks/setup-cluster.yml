@@ -53,6 +53,5 @@
     role_action: setup
   roles:
     - { role: app-portainer, tags: portainer }
-    - { role: app-kestra, tags: kestra }
   tags:
     - apps-extras

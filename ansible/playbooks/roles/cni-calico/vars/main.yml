@@ -1,0 +1,3 @@
+---
+# https://artifacthub.io/packages/helm/projectcalico/tigera-operator
+calico_chart_version: "v3.32.0"

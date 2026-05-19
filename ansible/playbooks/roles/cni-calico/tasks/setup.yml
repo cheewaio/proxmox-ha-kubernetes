@@ -9,6 +9,7 @@
   kubernetes.core.helm:
     name: calico
     chart_ref: projectcalico/tigera-operator
+    chart_version: "{{ calico_chart_version }}"
     release_namespace: tigera-operator
     create_namespace: true
     wait: true

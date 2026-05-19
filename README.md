@@ -66,7 +66,7 @@ variable "worker_node_memory" { default = 6144 }   # Memory in MB
 Edit `ansible/group_vars/all.yml` to configure Kubernetes settings:
 ```yaml
 # Kubernetes Settings
-kubernetes_version: "1.32.0"         # Kubernetes version
+kubernetes_version: "1.36.1"         # Kubernetes version
 container_runtime: "containerd"      # Container runtime (containerd/cri-o)
 cni_plugin: "cilium"                 # CNI plugin (calico/cilium/flannel)
 pod_cidr: "10.244.0.0/16"            # Pod network CIDR
@@ -121,7 +121,7 @@ To upgrade the Kubernetes cluster to a newer version:
 
 1. Update the Kubernetes version in `ansible/group_vars/all.yml`:
 ```yaml
-kubernetes_version: "1.33.0"  # Set to desired version
+kubernetes_version: "1.36.1"  # Set to desired version
 ```
 
 2. Run the upgrade playbook:
